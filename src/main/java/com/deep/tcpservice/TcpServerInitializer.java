@@ -5,7 +5,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 
-public class WssServerInitializer extends ChannelInitializer<SocketChannel>{
+public class TcpServerInitializer extends ChannelInitializer<SocketChannel>{
 
 
     @Override
@@ -13,7 +13,7 @@ public class WssServerInitializer extends ChannelInitializer<SocketChannel>{
 
         ChannelPipeline pipeline = ch.pipeline();
 
-        for (ChannelHandler chatHandler: Server.getInstance().getWebsocketHandler()) {
+        for (ChannelHandler chatHandler: Server.getInstance().getTcpHandler()) {
             pipeline.addLast(chatHandler);
         }
 

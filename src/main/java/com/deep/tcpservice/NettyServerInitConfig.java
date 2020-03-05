@@ -5,7 +5,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 /**
- * nettyæœåŠ¡ç«¯å¯åŠ¨åŠ è½½é…ç½®
+ * netty·şÎñ¶ËÆô¶¯¼ÓÔØÅäÖÃ
  * @author asus
  *
  */
@@ -17,7 +17,12 @@ public class NettyServerInitConfig implements ApplicationListener<ContextRefresh
     public void onApplicationEvent(ContextRefreshedEvent event) {
 
         if(event.getApplicationContext().getParent() == null){
-            WssServer.getInstance().start();
+            try {
+                TcpServer.getInstance().start();
+                WssServer.getInstance().start();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

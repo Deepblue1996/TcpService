@@ -1,6 +1,5 @@
 package com.deep.tcpservice;
 
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -15,37 +14,37 @@ import javax.annotation.PreDestroy;
  *
  */
 @Component
-public class WssServer {
+public class TcpServer {
 
     /**
      * 单例静态内部类
      * @author asus
      *
      */
-    public static class SingletionWSServer{
-        static final WssServer instance = new WssServer();
+    public static class SingletionTcpServer {
+        static final TcpServer instance = new TcpServer();
     }
 
-    public static WssServer getInstance(){
-        return SingletionWSServer.instance;
+    public static TcpServer getInstance(){
+        return SingletionTcpServer.instance;
     }
 
     private EventLoopGroup mainGroup ;
     private EventLoopGroup subGroup;
     private ServerBootstrap server;
 
-    public WssServer(){
+    public TcpServer(){
         mainGroup = new NioEventLoopGroup();
         subGroup = new NioEventLoopGroup();
         server = new ServerBootstrap();
         server.group(mainGroup, subGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new WssServerInitializer());	//添加自定义初始化处理器
+                .childHandler(new TcpServerInitializer());	//添加自定义初始化处理器
     }
 
     public void start() throws InterruptedException {
-        this.server.bind(8087).sync();
-        System.err.println("wss netty service started .....");
+        this.server.bind(8088).sync();
+        System.err.println("tcp netty service started .....");
     }
     /**
      * 销毁

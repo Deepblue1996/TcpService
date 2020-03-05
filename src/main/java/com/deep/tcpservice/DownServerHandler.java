@@ -1,12 +1,13 @@
 package com.deep.tcpservice;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DownServerHandler extends ChannelInboundHandlerAdapter {
+public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
 
     private Logger logger = LoggerFactory.getLogger(DownServerHandler.class);
 
@@ -18,11 +19,11 @@ public class DownServerHandler extends ChannelInboundHandlerAdapter {
         SocketChannel channel = (SocketChannel) ctx.channel();
         String channelId = channel.id().toString();
 
-        logger.info("链接报告开始");
-        logger.info("链接报告信息：有一客户端链接到本服务端:"+channelId);
-        logger.info("链接报告IP:" + channel.localAddress().getHostString());
-        logger.info("链接报告Port:" + channel.localAddress().getPort());
-        logger.info("链接报告完毕");
+        logger.info("链接报告开始\t");
+        logger.info("链接报告信息：有一客户端链接到本服务端:\t"+channelId);
+        logger.info("链接报告IP:\t" + channel.localAddress().getHostString());
+        logger.info("链接报告Port:\t" + channel.localAddress().getPort());
+        logger.info("链接报告完毕\t");
     }
 
     /**
@@ -32,16 +33,18 @@ public class DownServerHandler extends ChannelInboundHandlerAdapter {
      * @throws Exception
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object objMsgJsonStr) throws Exception {
+    public void messageReceived(ChannelHandlerContext ctx, Object objMsgJsonStr) throws Exception {
 
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
-        logger.info("收到数据:"+msg);
+        logger.info("下位机收到数据:\0"+msg);
+
+        CacheUtil.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         // 设备断开
-        logger.info("链接报告结束");
+        logger.info("链接报告结束\0");
     }
 }
