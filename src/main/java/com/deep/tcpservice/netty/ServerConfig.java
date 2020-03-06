@@ -1,7 +1,8 @@
-package com.deep.tcpservice;
+package com.deep.tcpservice.netty;
 
+import com.deep.tcpservice.tcp.TcpServerHandler;
+import com.deep.tcpservice.websocket.WssHandler;
 import io.netty.channel.ChannelHandler;
-import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
@@ -9,18 +10,16 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Server {
+public class ServerConfig {
 
-    public static Server server;
+    public static ServerConfig server;
 
-    public static Server getInstance() {
+    public static ServerConfig getInstance() {
         if(server == null) {
-            server = new Server();
+            server = new ServerConfig();
         }
         return server;
     }
@@ -38,7 +37,7 @@ public class Server {
         channelHandlers.add(new StringDecoder());//把网络字节流自动解码为 String 对象，属于入站处理器
 
         // 在管道中添加我们自己的接收数据实现方法
-        channelHandlers.add(new DownServerHandler());
+        channelHandlers.add(new TcpServerHandler());
 
         return channelHandlers;
     }
@@ -61,7 +60,7 @@ public class Server {
         channelHandlers.add(new WebSocketServerProtocolHandler("/ws","webSocket",true, 65536*10));
 
         //自定义handler
-        channelHandlers.add(new ChatHandler());
+        channelHandlers.add(new WssHandler());
         return channelHandlers;
     }
 }

@@ -1,16 +1,15 @@
-package com.deep.tcpservice;
+package com.deep.tcpservice.tcp;
 
-import io.netty.buffer.Unpooled;
+import com.deep.tcpservice.config.CacheGroup;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
+public class TcpServerHandler extends SimpleChannelInboundHandler<Object> {
 
-    private Logger logger = LoggerFactory.getLogger(DownServerHandler.class);
+    private Logger logger = LoggerFactory.getLogger(TcpServerHandler.class);
 
     /**
      * 当客户端主动链接服务端的链接后，这个通道就是活跃的了。也就是客户端与服务端建立了通信通道并且可以传输数据
@@ -20,7 +19,7 @@ public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
 
         logger.info("下位机 连接开始\t");
 
-        CacheUtil.downChannelGroup.add(ctx.channel());
+        CacheGroup.downChannelGroup.add(ctx.channel());
     }
 
     /**
@@ -35,13 +34,13 @@ public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
         logger.info("下位机收到数据:\t"+msg);
-        CacheUtil.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
+        CacheGroup.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         // 设备断开
         logger.info("下位机 结束\t");
-        CacheUtil.downChannelGroup.remove(ctx.channel());
+        CacheGroup.downChannelGroup.remove(ctx.channel());
     }
 }

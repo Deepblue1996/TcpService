@@ -1,4 +1,4 @@
-package com.deep.tcpservice;
+package com.deep.tcpservice.websocket;
 
 
 import io.netty.bootstrap.ServerBootstrap;

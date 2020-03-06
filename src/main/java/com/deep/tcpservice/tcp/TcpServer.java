@@ -1,4 +1,4 @@
-package com.deep.tcpservice;
+package com.deep.tcpservice.tcp;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
