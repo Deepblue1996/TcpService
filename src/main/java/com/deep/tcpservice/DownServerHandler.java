@@ -1,9 +1,10 @@
 package com.deep.tcpservice;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,14 +17,10 @@ public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        SocketChannel channel = (SocketChannel) ctx.channel();
-        String channelId = channel.id().toString();
 
-        logger.info("链接报告开始\t");
-        logger.info("链接报告信息：有一客户端链接到本服务端:\t"+channelId);
-        logger.info("链接报告IP:\t" + channel.localAddress().getHostString());
-        logger.info("链接报告Port:\t" + channel.localAddress().getPort());
-        logger.info("链接报告完毕\t");
+        logger.info("下位机 连接开始\t");
+
+        CacheUtil.downChannelGroup.add(ctx.channel());
     }
 
     /**
@@ -37,14 +34,14 @@ public class DownServerHandler extends SimpleChannelInboundHandler<Object> {
 
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
-        logger.info("下位机收到数据:\0"+msg);
-
+        logger.info("下位机收到数据:\t"+msg);
         CacheUtil.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         // 设备断开
-        logger.info("链接报告结束\0");
+        logger.info("下位机 结束\t");
+        CacheUtil.downChannelGroup.remove(ctx.channel());
     }
 }

@@ -6,6 +6,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 import java.nio.charset.Charset;
@@ -29,9 +30,13 @@ public class Server {
         List<ChannelHandler> channelHandlers = new ArrayList<>();
 
         // 基于换行符号
-        channelHandlers.add(new LineBasedFrameDecoder(1024));
+        //channelHandlers.add(new LineBasedFrameDecoder(1024));
         // 解码转String，注意调整自己的编码格式GBK、UTF-8
-        channelHandlers.add(new StringDecoder(Charset.forName("GBK")));
+        //channelHandlers.add(new StringDecoder(Charset.forName("GBK")));
+
+        channelHandlers.add(new StringEncoder());//对 String 对象自动编码,属于出站站处理器
+        channelHandlers.add(new StringDecoder());//把网络字节流自动解码为 String 对象，属于入站处理器
+
         // 在管道中添加我们自己的接收数据实现方法
         channelHandlers.add(new DownServerHandler());
 

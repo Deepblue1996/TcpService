@@ -12,20 +12,21 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        logger.info("添加客户端\0");
+        logger.info("添加客户端\t");
         CacheUtil.wsChannelGroup.add(ctx.channel());
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        logger.info("移除客户端\0");
+        logger.info("移除客户端\t");
         CacheUtil.wsChannelGroup.remove(ctx.channel());
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
         if(msg != null) {
-            logger.info("收到消息:\0"+ msg.text());
+                logger.info("收到消息:\t"+ msg.text());
+                CacheUtil.downChannelGroup.writeAndFlush(msg.text());
         }
     }
 
