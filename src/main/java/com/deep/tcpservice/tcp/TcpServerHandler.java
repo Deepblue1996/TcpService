@@ -17,7 +17,7 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
-        logger.info("下位机 连接开始\t");
+        logger.info("下位机 连接开始");
 
         CacheGroup.downChannelGroup.add(ctx.channel());
     }
@@ -33,14 +33,19 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<Object> {
 
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
-        logger.info("下位机收到数据:\t"+msg);
+        logger.info("下位机收到数据:"+msg);
         CacheGroup.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         // 设备断开
-        logger.info("下位机 结束\t");
+        logger.info("下位机 结束");
         CacheGroup.downChannelGroup.remove(ctx.channel());
     }
 }

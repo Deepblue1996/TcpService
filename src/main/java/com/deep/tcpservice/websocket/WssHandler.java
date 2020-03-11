@@ -13,20 +13,20 @@ public class WssHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> 
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        logger.info("添加客户端\t");
+        logger.info("添加客户端");
         CacheGroup.wsChannelGroup.add(ctx.channel());
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        logger.info("移除客户端\t");
+        logger.info("移除客户端");
         CacheGroup.wsChannelGroup.remove(ctx.channel());
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
         if(msg != null) {
-                logger.info("收到消息:\t"+ msg.text());
+                logger.info("收到消息:"+ msg.text());
                 CacheGroup.downChannelGroup.writeAndFlush(msg.text());
         }
     }

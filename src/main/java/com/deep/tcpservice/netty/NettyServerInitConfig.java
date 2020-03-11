@@ -7,7 +7,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 /**
- * netty·şÎñ¶ËÆô¶¯¼ÓÔØÅäÖÃ
+ * nettyæœåŠ¡ç«¯å¯åŠ¨åŠ è½½é…ç½®
  * @author asus
  *
  */
