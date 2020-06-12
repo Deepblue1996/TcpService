@@ -2,6 +2,7 @@ package com.deep.tcpservice.request;
 
 import com.deep.tcpservice.bean.*;
 import com.deep.tcpservice.util.AesUtil;
+import com.deep.tcpservice.util.TokenUtil;
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,57 +26,6 @@ public class RequestController {
     private UserTableRepository userTableRepository;
 
     /**
-     * 初始化一个新的Token
-     *
-     * @param userId 用户id
-     * @return token
-     */
-    private String initToken(int userId) {
-        LoginBean loginBean = new LoginBean();
-        // 录入userId
-        loginBean.setUserId(userId);
-        // 录入有效时间
-        loginBean.setDateTimeEnd(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7);
-        // 转化字符串
-        String tokenJson = new Gson().toJson(loginBean);
-        String token = null;
-        try {
-            // AES加密
-            token = AesUtil.aesEncryption(tokenJson);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return token;
-    }
-
-    /**
-     * 判断是否有效
-     *
-     * @param token 要解密的字符串
-     * @return 是否有效
-     */
-    private boolean haveToken(String token) {
-        String tokenJson = null;
-        try {
-            tokenJson = AesUtil.aesDecryption(token);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // 判断是否有效Token
-        if (tokenJson == null) {
-            return false;
-        }
-        // 判断是否有效对象
-        LoginBean loginBean = new Gson().fromJson(tokenJson, LoginBean.class);
-        // 判断数据库是否存在
-        if (userTableRepository.findByIdLike(loginBean.getUserId()).size() == 0) {
-            return false;
-        }
-        // 判断是否有效时间
-        return loginBean.getDateTimeEnd() < System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7;
-    }
-
-    /**
      * http - Get请求 - http://127.0.0.1:8080/tcpservice_war/h
      *
      * @return 打印在网页的内容 类型String
@@ -88,7 +38,7 @@ public class RequestController {
     /**
      * 登陆
      *
-     * @param session 会话控制
+     * @param session  会话控制
      * @param username 用户名称
      * @param password 用户密码
      * @return 相关信息
@@ -104,27 +54,27 @@ public class RequestController {
             tokenBeanInfoBean.setCode(400);
             tokenBeanInfoBean.setMsg("Database does not exist for the user");
 
-            log.info("User:"+username+" Database does not exist for the user");
+            log.info("User:" + username + " Database does not exist for the user");
 
             return new Gson().toJson(tokenBeanInfoBean);
         }
         if (password.equals(userTables.get(0).getPassword())) {
-            tokenBean.setToken(initToken(userTables.get(0).getId()));
+            tokenBean.setToken(TokenUtil.initToken(userTables.get(0).getId()));
             tokenBeanInfoBean.setCode(200);
             tokenBeanInfoBean.setMsg("Log in successfully");
             tokenBeanInfoBean.setData(tokenBean);
 
             response.setHeader("token", tokenBean.getToken());
 
-            log.info("User:"+username+" Login success");
-            log.info("User:"+username+" token: "+ tokenBean.getToken());
+            log.info("User:" + username + " Login success");
+            log.info("User:" + username + " token: " + tokenBean.getToken());
 
             return new Gson().toJson(tokenBeanInfoBean);
         } else {
             tokenBeanInfoBean.setCode(400);
             tokenBeanInfoBean.setMsg("Incorrect password");
 
-            log.info("User:"+username+" Incorrect password");
+            log.info("User:" + username + " Incorrect password");
 
             return new Gson().toJson(tokenBeanInfoBean);
         }
@@ -151,16 +101,16 @@ public class RequestController {
             userTable.setPassword(password);
             UserTable userTableTemp = userTableRepository.saveAndFlush(userTable);
 
-            if(userTableTemp.getId() != 0) {
+            if (userTableTemp.getId() != 0) {
                 tokenBeanInfoBean.setCode(200);
                 tokenBeanInfoBean.setMsg("success");
 
-                log.info("User:"+username+" register success");
+                log.info("User:" + username + " register success");
             } else {
                 tokenBeanInfoBean.setCode(400);
                 tokenBeanInfoBean.setMsg("Registration failed");
 
-                log.info("User:"+username+" Database registration failed");
+                log.info("User:" + username + " Database registration failed");
             }
 
             return new Gson().toJson(tokenBeanInfoBean);
@@ -169,18 +119,24 @@ public class RequestController {
         tokenBeanInfoBean.setCode(400);
         tokenBeanInfoBean.setMsg("The user is registered");
 
-        log.info("User:"+username+" Registration failed, the database already exists for the user");
+        log.info("User:" + username + " Registration failed, the database already exists for the user");
 
         return new Gson().toJson(tokenBeanInfoBean);
     }
 
+    /**
+     * 登陆状态检测
+     *
+     * @param token 令牌
+     * @return 返回相关信息
+     */
     @PostMapping("/loginEffective")
     public String loginEffective(@RequestHeader(name = "token") String token) {
 
         InfoBean<String> tokenBeanInfoBean = new InfoBean<>();
 
         try {
-            if (haveToken(token)) {
+            if (TokenUtil.haveToken(userTableRepository, token)) {
                 tokenBeanInfoBean.setCode(200);
                 tokenBeanInfoBean.setMsg("Login success");
             } else {
