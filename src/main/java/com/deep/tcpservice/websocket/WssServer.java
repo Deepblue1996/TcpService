@@ -30,7 +30,7 @@ public class WssServer {
         return SingletionWSServer.instance;
     }
 
-    private EventLoopGroup mainGroup ;
+    private EventLoopGroup mainGroup;
     private EventLoopGroup subGroup;
     private ServerBootstrap server;
 

@@ -29,7 +29,7 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<Object> {
      * @throws Exception
      */
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, Object objMsgJsonStr) throws Exception {
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object objMsgJsonStr) throws Exception {
 
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
