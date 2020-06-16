@@ -35,9 +35,6 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
 
     private WebSocketServerHandshaker handShaker;
 
-    @Resource
-    public UserTableRepository userTableRepository;
-
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Add client");
@@ -157,7 +154,7 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                             Type type2 = new TypeToken<BaseEn<TokenChatUBean>>(){}.getType();
                             BaseEn<TokenChatUBean> baseEnChild2 = new Gson().fromJson(strMsg, type2);
 
-                            if (!TokenUtil.haveToken(userTableRepository, baseEnChild2.data.tokenChatBean.token)) {
+                            if (!TokenUtil.haveToken(baseEnChild2.data.tokenChatBean.token)) {
                                 logger.info("token over");
                                 logger.info("connect client error");
                                 ctx.close();

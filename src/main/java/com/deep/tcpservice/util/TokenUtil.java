@@ -9,6 +9,8 @@ import com.google.gson.Gson;
  */
 public class TokenUtil {
 
+    public static UserTableRepository userTableRepository;
+
     /**
      * 初始化一个新的Token
      *
@@ -39,7 +41,7 @@ public class TokenUtil {
      * @param token 要解密的字符串
      * @return 是否有效
      */
-    public static boolean haveToken(UserTableRepository userTableRepository, String token) {
+    public static boolean haveToken(String token) {
         String tokenJson = null;
         try {
             tokenJson = AesUtil.aesDecryption(token);

@@ -1,5 +1,6 @@
 package com.deep.tcpservice.netty;
 
+import com.deep.tcpservice.bean.UserTableRepository;
 import com.deep.tcpservice.tcp.TcpServerHandler;
 import com.deep.tcpservice.websocket.WssHandler;
 import io.netty.channel.ChannelHandler;
@@ -10,10 +11,14 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerConfig {
+
+    @Resource
+    private UserTableRepository userTableRepository;
 
     public static ServerConfig server;
 
@@ -55,12 +60,12 @@ public class ServerConfig {
 
         // ================= 上述是用于支持http协议的 ==============
 
+        //自定义handler
+        channelHandlers.add(new WssHandler());
         //websocket 服务器处理的协议，用于给指定的客户端进行连接访问的路由地址
         //比如处理一些握手动作(ping,pong)
         channelHandlers.add(new WebSocketServerProtocolHandler("/ws","webSocket",true, 65536*10));
 
-        //自定义handler
-        channelHandlers.add(new WssHandler());
         return channelHandlers;
     }
 }

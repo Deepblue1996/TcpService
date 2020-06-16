@@ -1,7 +1,9 @@
 package com.deep.tcpservice.request;
 
-import com.deep.tcpservice.bean.*;
-import com.deep.tcpservice.util.AesUtil;
+import com.deep.tcpservice.bean.InfoBean;
+import com.deep.tcpservice.bean.TokenBean;
+import com.deep.tcpservice.bean.UserTable;
+import com.deep.tcpservice.bean.UserTableRepository;
 import com.deep.tcpservice.util.TokenUtil;
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
@@ -9,9 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 public class RequestController {
 
-    private final Log log = LogFactory.getLog(RestController.class);
+    private final Log log = LogFactory.getLog(RequestController.class);
 
     @Resource
     private UserTableRepository userTableRepository;
@@ -38,7 +38,7 @@ public class RequestController {
     /**
      * 登陆
      *
-     * @param session  会话控制
+     * @param response  会话控制
      * @param username 用户名称
      * @param password 用户密码
      * @return 相关信息
@@ -48,6 +48,9 @@ public class RequestController {
 
         InfoBean<TokenBean> tokenBeanInfoBean = new InfoBean<>();
         TokenBean tokenBean = new TokenBean();
+
+        // 赋予全局
+        TokenUtil.userTableRepository = userTableRepository;
 
         List<UserTable> userTables = userTableRepository.findByUsernameLike(username);
         if (userTables.size() == 0) {
@@ -69,15 +72,14 @@ public class RequestController {
             log.info("User:" + username + " Login success");
             log.info("User:" + username + " token: " + tokenBean.getToken());
 
-            return new Gson().toJson(tokenBeanInfoBean);
         } else {
             tokenBeanInfoBean.setCode(400);
             tokenBeanInfoBean.setMsg("Incorrect password");
 
             log.info("User:" + username + " Incorrect password");
 
-            return new Gson().toJson(tokenBeanInfoBean);
         }
+        return new Gson().toJson(tokenBeanInfoBean);
     }
 
     /**
@@ -136,7 +138,7 @@ public class RequestController {
         InfoBean<String> tokenBeanInfoBean = new InfoBean<>();
 
         try {
-            if (TokenUtil.haveToken(userTableRepository, token)) {
+            if (TokenUtil.haveToken(token)) {
                 tokenBeanInfoBean.setCode(200);
                 tokenBeanInfoBean.setMsg("Login success");
             } else {
