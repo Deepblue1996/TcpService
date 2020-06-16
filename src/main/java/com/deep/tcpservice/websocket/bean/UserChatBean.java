@@ -6,12 +6,12 @@ public class UserChatBean {
     /**
      * 校验是否Token
      */
-    public boolean isConnectFirst;
+    public boolean isConnectFirst = false;
 
-    public ChannelId channelId;
+    public String asLongText;
 
-    public UserChatBean(boolean isConnectFirst, ChannelId channelId) {
+    public UserChatBean(boolean isConnectFirst, String asLongText) {
         this.isConnectFirst = isConnectFirst;
-        this.channelId = channelId;
+        this.asLongText = asLongText;
     }
 }
