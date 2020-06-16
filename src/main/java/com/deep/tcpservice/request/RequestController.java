@@ -5,6 +5,8 @@ import com.deep.tcpservice.bean.TokenBean;
 import com.deep.tcpservice.bean.UserTable;
 import com.deep.tcpservice.bean.UserTableRepository;
 import com.deep.tcpservice.util.TokenUtil;
+import com.deep.tcpservice.websocket.WssHandler;
+import com.deep.tcpservice.websocket.bean.UserChatBean;
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -137,6 +140,8 @@ public class RequestController {
 
         InfoBean<String> tokenBeanInfoBean = new InfoBean<>();
 
+        TokenUtil.userTableRepository = userTableRepository;
+
         try {
             if (TokenUtil.haveToken(token)) {
                 tokenBeanInfoBean.setCode(200);
@@ -146,6 +151,36 @@ public class RequestController {
                 tokenBeanInfoBean.setMsg("Login failure");
             }
 
+            return new Gson().toJson(tokenBeanInfoBean);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new Gson().toJson(tokenBeanInfoBean);
+    }
+
+    /**
+     * 获取当前所有在线的用户
+     *
+     * @param token 令牌
+     * @return 返回相关信息
+     */
+    @PostMapping("/userList")
+    public String userList(@RequestHeader(name = "token") String token) {
+
+        InfoBean<List<UserChatBean>> tokenBeanInfoBean = new InfoBean<>();
+        List<UserChatBean> userChatBeanList = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            userChatBeanList.addAll(WssHandler.userChatBeanList);
+        }
+        tokenBeanInfoBean.setData(userChatBeanList);
+        try {
+            if (TokenUtil.haveToken(token)) {
+                tokenBeanInfoBean.setCode(200);
+                tokenBeanInfoBean.setMsg("Login success");
+            } else {
+                tokenBeanInfoBean.setCode(400);
+                tokenBeanInfoBean.setMsg("Login failure");
+            }
             return new Gson().toJson(tokenBeanInfoBean);
         } catch (Exception e) {
             e.printStackTrace();

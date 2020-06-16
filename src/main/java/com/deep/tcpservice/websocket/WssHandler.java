@@ -1,6 +1,5 @@
 package com.deep.tcpservice.websocket;
 
-import com.deep.tcpservice.bean.UserTableRepository;
 import com.deep.tcpservice.config.CacheGroup;
 import com.deep.tcpservice.util.TokenUtil;
 import com.deep.tcpservice.websocket.bean.BaseEn;
@@ -20,7 +19,6 @@ import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,20 +29,22 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
 
     private Logger logger = LoggerFactory.getLogger(WssHandler.class);
 
-    public List<UserChatBean> userChatBeanList = new ArrayList<>();
+    // 当前在线用户的信息
+    public static List<UserChatBean> userChatBeanList = new ArrayList<>();
 
     private WebSocketServerHandshaker handShaker;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Add client");
-        userChatBeanList.add(new UserChatBean(false, ctx.channel().id().asLongText()));
+        userChatBeanList.add(new UserChatBean(false, ctx.channel().id().asLongText(), null));
         CacheGroup.wsChannelGroup.add(ctx.channel());
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-
+        Channel incoming = ctx.channel();
+        System.out.println("Wss Client:" + incoming.remoteAddress() + " online");
     }
 
     @Override
@@ -105,6 +105,8 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     "%s frame types not supported", frame.getClass().getName()));
         }
 
+        // 会话操作 --------------------------------------------------------
+
         // 返回应答消息
         String strMsg = ((TextWebSocketFrame) frame).text();
 
@@ -148,6 +150,9 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     }
                 break;
                 case 20000:
+                    /**
+                     * 获取客户端的Token
+                     */
                     for (int i = 0; i < userChatBeanList.size(); i++) {
                         if (userChatBeanList.get(i).asLongText.equals(ctx.channel().id().asLongText()) && userChatBeanList.get(i).isConnectFirst) {
 
@@ -161,6 +166,8 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                             } else {
                                 logger.info("connect client success again");
                                 userChatBeanList.get(i).isConnectFirst = false;
+                                // 临时记录在线用户的信息
+                                userChatBeanList.get(i).userTable = TokenUtil.getUser(baseEnChild2.data.tokenChatBean.token);
                             }
                         }
                     }

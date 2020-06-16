@@ -1,8 +1,11 @@
 package com.deep.tcpservice.util;
 
 import com.deep.tcpservice.bean.LoginBean;
+import com.deep.tcpservice.bean.UserTable;
 import com.deep.tcpservice.bean.UserTableRepository;
 import com.google.gson.Gson;
+
+import java.util.List;
 
 /**
  * Token 管理对象
@@ -62,4 +65,29 @@ public class TokenUtil {
         return loginBean.getDateTimeEnd() < System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7;
     }
 
+    /**
+     * 从Token获取用户的信息
+     * @param token
+     * @return
+     */
+    public static UserTable getUser(String token) {
+        String tokenJson = null;
+        try {
+            tokenJson = AesUtil.aesDecryption(token);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 判断是否有效Token
+        if (tokenJson == null) {
+            return null;
+        }
+        // 判断是否有效对象
+        LoginBean loginBean = new Gson().fromJson(tokenJson, LoginBean.class);
+        // 判断数据库是否存在
+        List<UserTable> userTables = userTableRepository.findByIdLike(loginBean.getUserId());
+        if (userTables.size() == 0) {
+            return null;
+        }
+        return userTables.get(0);
+    }
 }

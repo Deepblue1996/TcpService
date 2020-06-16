@@ -1,17 +1,22 @@
 package com.deep.tcpservice.websocket.bean;
 
-import io.netty.channel.ChannelId;
+import com.deep.tcpservice.bean.UserTable;
 
-public class UserChatBean {
+import java.io.Serializable;
+
+public class UserChatBean implements Serializable {
     /**
      * 校验是否Token
      */
-    public boolean isConnectFirst = false;
+    public boolean isConnectFirst;
 
     public String asLongText;
 
-    public UserChatBean(boolean isConnectFirst, String asLongText) {
+    public UserTable userTable;
+
+    public UserChatBean(boolean isConnectFirst, String asLongText, UserTable userTable) {
         this.isConnectFirst = isConnectFirst;
         this.asLongText = asLongText;
+        this.userTable = userTable;
     }
 }
