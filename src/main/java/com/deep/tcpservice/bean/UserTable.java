@@ -17,6 +17,8 @@ public class UserTable implements Serializable {
 
     private String password;
 
+    private String headerPath;
+
     public int getId() {
         return id;
     }
@@ -39,5 +41,13 @@ public class UserTable implements Serializable {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getHeaderPath() {
+        return headerPath;
+    }
+
+    public void setHeaderPath(String headerPath) {
+        this.headerPath = headerPath;
     }
 }

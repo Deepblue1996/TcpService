@@ -10,12 +10,18 @@ import com.deep.tcpservice.websocket.bean.UserChatBean;
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 用于标注控制层组件(如struts中的action)，@ResponseBody和@Controller的合集
@@ -41,7 +47,7 @@ public class RequestController {
     /**
      * 登陆
      *
-     * @param response  会话控制
+     * @param response 会话控制
      * @param username 用户名称
      * @param password 用户密码
      * @return 相关信息
@@ -182,6 +188,76 @@ public class RequestController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return new Gson().toJson(tokenBeanInfoBean);
+    }
+
+    /**
+     * 上传头像
+     *
+     * @param file    文件
+     * @param token   token
+     * @return 信息
+     */
+    @SuppressWarnings("all")
+    @Transactional // 执行数据库更新事务
+    @PostMapping(value = "/fileUploadHeadPortrait")
+    public String fileUploadHeadPortrait(@RequestHeader(name = "token") String token, @RequestParam(value = "file") MultipartFile file) {
+
+        TokenUtil.userTableRepository = userTableRepository;
+
+        InfoBean<String> tokenBeanInfoBean = new InfoBean<>();
+        if (file.isEmpty()) {
+            tokenBeanInfoBean.setCode(400);
+            tokenBeanInfoBean.setMsg("file failure");
+            return new Gson().toJson(tokenBeanInfoBean);
+        }
+
+        try {
+            if (TokenUtil.haveToken(token)) {
+                tokenBeanInfoBean.setCode(200);
+
+                String fileName = file.getOriginalFilename();  // 文件名
+                String suffixName = fileName.substring(fileName.lastIndexOf("."));  // 后缀名
+
+                String realPath = ResourceUtils.getURL("classpath:").getPath() + "static/upload/";
+
+                fileName = UUID.randomUUID() + suffixName; // 新文件名
+                File dest = new File(realPath + fileName);
+                if (!dest.getParentFile().exists()) {
+                    dest.getParentFile().mkdirs();
+                }
+                try {
+                    file.transferTo(dest);
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                    tokenBeanInfoBean.setCode(400);
+                    tokenBeanInfoBean.setMsg("user create file faile");
+
+                    return new Gson().toJson(tokenBeanInfoBean);
+                }
+                String filesName = realPath + fileName;
+
+                tokenBeanInfoBean.setData(fileName);
+                tokenBeanInfoBean.setMsg("Path:" + filesName);
+
+                log.info("User: upload Img to service - " + filesName + " success");
+
+                // 获取用户
+                UserTable userTable = TokenUtil.getUser(token);
+
+                userTableRepository.updateHeaderById(userTable.getId(), fileName);
+
+            } else {
+                tokenBeanInfoBean.setCode(400);
+                tokenBeanInfoBean.setMsg("token failure");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            tokenBeanInfoBean.setCode(400);
+            tokenBeanInfoBean.setMsg("file failure");
+        }
+
         return new Gson().toJson(tokenBeanInfoBean);
     }
 }
