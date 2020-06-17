@@ -34,7 +34,7 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<Object> {
         String msg = objMsgJsonStr.toString();
         //接收设备发来信息
         logger.info("Down Client:"+msg);
-        CacheGroup.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
+        //CacheGroup.wsChannelGroup.writeAndFlush(new TextWebSocketFrame(objMsgJsonStr.toString()));
     }
 
     @Override

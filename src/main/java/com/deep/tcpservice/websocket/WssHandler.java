@@ -1,8 +1,10 @@
 package com.deep.tcpservice.websocket;
 
+import com.deep.tcpservice.bean.UserTable;
 import com.deep.tcpservice.config.CacheGroup;
 import com.deep.tcpservice.util.TokenUtil;
 import com.deep.tcpservice.websocket.bean.BaseEn;
+import com.deep.tcpservice.websocket.bean.ChatMsgBean;
 import com.deep.tcpservice.websocket.bean.TokenChatUBean;
 import com.deep.tcpservice.websocket.bean.UserChatBean;
 import com.google.gson.Gson;
@@ -32,13 +34,14 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
     // 当前在线用户的信息
     public static List<UserChatBean> userChatBeanList = new ArrayList<>();
 
+
     private WebSocketServerHandshaker handShaker;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Add client");
         userChatBeanList.add(new UserChatBean(false, ctx.channel().id().asLongText(), null));
-        CacheGroup.wsChannelGroup.add(ctx.channel());
+        CacheGroup.wsShannels.add(ctx.channel());
     }
 
     @Override
@@ -56,7 +59,7 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                 break;
             }
         }
-        CacheGroup.wsChannelGroup.remove(ctx.channel());
+        CacheGroup.wsShannels.remove(ctx.channel());
     }
 
     @Override
@@ -128,7 +131,8 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     break;
                 case 10000:
                     // 连接成功，返回会话id给客户端
-                    Type type = new TypeToken<BaseEn<TokenChatUBean>>(){}.getType();
+                    Type type = new TypeToken<BaseEn<TokenChatUBean>>() {
+                    }.getType();
                     BaseEn<TokenChatUBean> baseEnChild = new Gson().fromJson(strMsg, type);
 
                     baseEnChild.data.tokenChatBean.asLongText = ctx.channel().id().asLongText();
@@ -148,7 +152,7 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                             userChatBeanList.get(i).isConnectFirst = true;
                         }
                     }
-                break;
+                    break;
                 case 20000:
                     /**
                      * 获取客户端的Token
@@ -156,7 +160,8 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     for (int i = 0; i < userChatBeanList.size(); i++) {
                         if (userChatBeanList.get(i).asLongText.equals(ctx.channel().id().asLongText()) && userChatBeanList.get(i).isConnectFirst) {
 
-                            Type type2 = new TypeToken<BaseEn<TokenChatUBean>>(){}.getType();
+                            Type type2 = new TypeToken<BaseEn<TokenChatUBean>>() {
+                            }.getType();
                             BaseEn<TokenChatUBean> baseEnChild2 = new Gson().fromJson(strMsg, type2);
 
                             if (!TokenUtil.haveToken(baseEnChild2.data.tokenChatBean.token)) {
@@ -168,6 +173,33 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                                 userChatBeanList.get(i).isConnectFirst = false;
                                 // 临时记录在线用户的信息
                                 userChatBeanList.get(i).userTable = TokenUtil.getUser(baseEnChild2.data.tokenChatBean.token);
+                            }
+                        }
+                    }
+                    break;
+                case 30000:
+                    /**
+                     * 消息
+                     */
+                    logger.info(strMsg);
+                    Type type2 = new TypeToken<BaseEn<ChatMsgBean<?>>>() {
+                    }.getType();
+                    BaseEn<ChatMsgBean<?>> baseEnChild2 = new Gson().fromJson(strMsg, type2);
+                    if (baseEnChild2.data.type == 0) {
+                        Type typeTemp = new TypeToken<BaseEn<ChatMsgBean<String>>>() {
+                        }.getType();
+                        BaseEn<ChatMsgBean<String>> baseEnChildTemp = new Gson().fromJson(strMsg, typeTemp);
+                        for (int i = 0; i < userChatBeanList.size(); i++) {
+                            if (userChatBeanList.get(i).userTable.getId() == baseEnChildTemp.data.userTableHere.getId()) {
+                                for (int j = 0; j < CacheGroup.wsShannels.size(); j++) {
+                                    if (CacheGroup.wsShannels.get(j).id().asLongText().equals(userChatBeanList.get(i).asLongText)) {
+                                        String sendMsg = new Gson().toJson(baseEnChildTemp);
+                                        logger.info("service send:" + sendMsg);
+                                        CacheGroup.wsShannels.get(j).writeAndFlush(new TextWebSocketFrame(sendMsg));
+                                        break;
+                                    }
+                                }
+                                break;
                             }
                         }
                     }

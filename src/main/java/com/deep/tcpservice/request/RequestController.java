@@ -168,10 +168,7 @@ public class RequestController {
     public String userList(@RequestHeader(name = "token") String token) {
 
         InfoBean<List<UserChatBean>> tokenBeanInfoBean = new InfoBean<>();
-        List<UserChatBean> userChatBeanList = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            userChatBeanList.addAll(WssHandler.userChatBeanList);
-        }
+        List<UserChatBean> userChatBeanList = new ArrayList<>(WssHandler.userChatBeanList);
         tokenBeanInfoBean.setData(userChatBeanList);
         try {
             if (TokenUtil.haveToken(token)) {
