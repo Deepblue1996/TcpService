@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class TokenBean {
-    private String token = "";
+    private String token;
+    private UserTable userTable;
 }

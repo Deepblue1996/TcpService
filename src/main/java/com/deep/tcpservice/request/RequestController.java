@@ -4,6 +4,7 @@ import com.deep.tcpservice.bean.InfoBean;
 import com.deep.tcpservice.bean.TokenBean;
 import com.deep.tcpservice.bean.UserTable;
 import com.deep.tcpservice.bean.UserTableRepository;
+import com.deep.tcpservice.util.FileToBase64Util;
 import com.deep.tcpservice.util.TokenUtil;
 import com.deep.tcpservice.websocket.WssHandler;
 import com.deep.tcpservice.websocket.bean.UserChatBean;
@@ -11,6 +12,7 @@ import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,8 +72,10 @@ public class RequestController {
 
             return new Gson().toJson(tokenBeanInfoBean);
         }
-        if (password.equals(userTables.get(0).getPassword())) {
+        if (TokenUtil.okPassword(username, password)) {
             tokenBean.setToken(TokenUtil.initToken(userTables.get(0).getId()));
+            userTables.get(0).setPassword("");
+            tokenBean.setUserTable(userTables.get(0));
             tokenBeanInfoBean.setCode(200);
             tokenBeanInfoBean.setMsg("Log in successfully");
             tokenBeanInfoBean.setData(tokenBean);
@@ -85,7 +89,7 @@ public class RequestController {
             tokenBeanInfoBean.setCode(400);
             tokenBeanInfoBean.setMsg("Incorrect password");
 
-            log.info("User:" + username + " Incorrect password");
+            log.error("User:" + username + " Incorrect password");
 
         }
         return new Gson().toJson(tokenBeanInfoBean);
@@ -109,7 +113,7 @@ public class RequestController {
             // 保存
             UserTable userTable = new UserTable();
             userTable.setUsername(username);
-            userTable.setPassword(password);
+            userTable.setPassword(TokenUtil.initPassword(password));
             UserTable userTableTemp = userTableRepository.saveAndFlush(userTable);
 
             if (userTableTemp.getId() != 0) {
@@ -121,7 +125,7 @@ public class RequestController {
                 tokenBeanInfoBean.setCode(400);
                 tokenBeanInfoBean.setMsg("Registration failed");
 
-                log.info("User:" + username + " Database registration failed");
+                log.error("User:" + username + " Database registration failed");
             }
 
             return new Gson().toJson(tokenBeanInfoBean);
@@ -152,9 +156,13 @@ public class RequestController {
             if (TokenUtil.haveToken(token)) {
                 tokenBeanInfoBean.setCode(200);
                 tokenBeanInfoBean.setMsg("Login success");
+
+                log.info("User: Login success");
             } else {
                 tokenBeanInfoBean.setCode(400);
                 tokenBeanInfoBean.setMsg("Login failure");
+
+                log.error("User: Login failure");
             }
 
             return new Gson().toJson(tokenBeanInfoBean);
@@ -194,8 +202,8 @@ public class RequestController {
     /**
      * 上传头像
      *
-     * @param file    文件
-     * @param token   token
+     * @param file  文件
+     * @param token token
      * @return 信息
      */
     @SuppressWarnings("all")
@@ -219,10 +227,13 @@ public class RequestController {
                 String fileName = file.getOriginalFilename();  // 文件名
                 String suffixName = fileName.substring(fileName.lastIndexOf("."));  // 后缀名
 
-                String realPath = ResourceUtils.getURL("classpath:").getPath() + "static/upload/";
+                String path = ClassUtils.getDefaultClassLoader().getResource("").getPath();
+
+                File upload = new File(path, "static/images/upload/");
+                if (!upload.exists()) upload.mkdirs();
 
                 fileName = UUID.randomUUID() + suffixName; // 新文件名
-                File dest = new File(realPath + fileName);
+                File dest = new File(upload.getAbsolutePath() + "/" + fileName);
                 if (!dest.getParentFile().exists()) {
                     dest.getParentFile().mkdirs();
                 }
@@ -236,7 +247,7 @@ public class RequestController {
 
                     return new Gson().toJson(tokenBeanInfoBean);
                 }
-                String filesName = realPath + fileName;
+                String filesName = dest.getAbsolutePath();
 
                 tokenBeanInfoBean.setData(fileName);
                 tokenBeanInfoBean.setMsg("Path:" + filesName);
@@ -251,11 +262,72 @@ public class RequestController {
             } else {
                 tokenBeanInfoBean.setCode(400);
                 tokenBeanInfoBean.setMsg("token failure");
+
+                log.error("User: upload Img to service - faile");
             }
         } catch (Exception e) {
             e.printStackTrace();
             tokenBeanInfoBean.setCode(400);
             tokenBeanInfoBean.setMsg("file failure");
+
+            log.error("User: upload Img to service - faile");
+        }
+
+        return new Gson().toJson(tokenBeanInfoBean);
+    }
+
+    /**
+     * 获取图片
+     * @param token token
+     * @param name 图片名称
+     * @return
+     */
+    @SuppressWarnings("all")
+    @PostMapping("/rePhoto")
+    public String rePhoto(@RequestHeader(name = "token") String token, @RequestParam(value = "name") String name) {
+
+        TokenUtil.userTableRepository = userTableRepository;
+
+        InfoBean<String> tokenBeanInfoBean = new InfoBean<>();
+
+        try {
+            if (TokenUtil.haveToken(token)) {
+
+                String path = ClassUtils.getDefaultClassLoader().getResource("").getPath();
+
+                File upload = new File(path, "static/images/upload/");
+                if (!upload.exists()) {
+                    tokenBeanInfoBean.setCode(400);
+                    tokenBeanInfoBean.setMsg("Img get failure");
+                    log.error("User: get Img to service - faile");
+                }
+                String fileName = upload.getAbsolutePath() + "/" + name;  // 文件名
+                File file = new File(fileName);
+                if (!file.exists()) {
+                    tokenBeanInfoBean.setCode(400);
+                    tokenBeanInfoBean.setMsg("Img get failure");
+                    log.error("User: get Img to service - faile");
+                }
+
+                String baseFile = FileToBase64Util.file2Base64(file);
+
+                tokenBeanInfoBean.setCode(200);
+                tokenBeanInfoBean.setMsg("Img get success");
+
+                tokenBeanInfoBean.setData(baseFile);
+
+            } else {
+                tokenBeanInfoBean.setCode(400);
+                tokenBeanInfoBean.setMsg("Img get failure");
+
+                log.error("User: get Img to service - faile");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            tokenBeanInfoBean.setCode(400);
+            tokenBeanInfoBean.setMsg("file failure");
+
+            log.error("User: Img to client - faile");
         }
 
         return new Gson().toJson(tokenBeanInfoBean);

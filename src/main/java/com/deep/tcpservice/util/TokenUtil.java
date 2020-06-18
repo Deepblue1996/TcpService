@@ -15,6 +15,52 @@ public class TokenUtil {
     public static UserTableRepository userTableRepository;
 
     /**
+     * 初始化密码
+     *
+     * @param pass 密码
+     * @return token
+     */
+    public static String initPassword(String pass) {
+        String token = null;
+        try {
+            // AES加密
+            token = AesUtil.aesEncryption(pass);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return token;
+    }
+
+    /**
+     * 密码是否正确
+     *
+     * @param pass 密码对比数据库
+     * @return
+     */
+    public static boolean okPassword(String username, String pass) {
+        String tokenJson = null;
+
+        List<UserTable> userTables = userTableRepository.findByUsernameLike(username);
+        if(userTables.size() == 0) {
+            return false;
+        }
+
+        String passTemp = userTables.get(0).getPassword();
+
+        try {
+            tokenJson = AesUtil.aesDecryption(passTemp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(tokenJson != null) {
+            if(tokenJson.equals(pass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 初始化一个新的Token
      *
      * @param userId 用户id
