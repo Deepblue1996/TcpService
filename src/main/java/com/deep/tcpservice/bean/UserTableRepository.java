@@ -17,10 +17,20 @@ public interface UserTableRepository extends JpaRepository<UserTable, Integer> {
 
     /**
      * 更新头像路径
-     * @param id
-     * @param path
+     * @param id id
+     * @param path 路径
      */
     @Modifying
     @Query("update UserTable m set m.headerPath=:path where m.id=:id")
     void updateHeaderById(int id, String path);
+
+    /**
+     * 更新个人信息
+     * @param id id
+     * @param nickname 昵称
+     * @param content 签名
+     */
+    @Modifying
+    @Query("update UserTable m set m.nickname=:nickname, m.content=:content where m.id=:id")
+    void updateInfoById(int id, String nickname, String content);
 }

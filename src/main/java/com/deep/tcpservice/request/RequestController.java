@@ -224,12 +224,15 @@ public class RequestController {
             if (TokenUtil.haveToken(token)) {
                 tokenBeanInfoBean.setCode(200);
 
+                // tomcat bin路径
+                String past = System.getProperty("user.dir");
+                // 截断路径
+                String sxc = past.substring(0, past.lastIndexOf("\\"));
+
                 String fileName = file.getOriginalFilename();  // 文件名
                 String suffixName = fileName.substring(fileName.lastIndexOf("."));  // 后缀名
 
-                String path = ClassUtils.getDefaultClassLoader().getResource("").getPath();
-
-                File upload = new File(path, "static/images/upload/");
+                File upload = new File(sxc, "static/images/upload/");
                 if (!upload.exists()) upload.mkdirs();
 
                 fileName = UUID.randomUUID() + suffixName; // 新文件名
@@ -257,7 +260,16 @@ public class RequestController {
                 // 获取用户
                 UserTable userTable = TokenUtil.getUser(token);
 
+                userTable.setHeaderPath(fileName);
+
                 userTableRepository.updateHeaderById(userTable.getId(), fileName);
+
+                for (int i = 0; i < WssHandler.userChatBeanList.size(); i++) {
+                    if(WssHandler.userChatBeanList.get(i).userTable.getId() == userTable.getId()) {
+                        WssHandler.userChatBeanList.get(i).userTable.setHeaderPath(userTable.getHeaderPath());
+                        break;
+                    }
+                }
 
             } else {
                 tokenBeanInfoBean.setCode(400);
@@ -293,9 +305,12 @@ public class RequestController {
         try {
             if (TokenUtil.haveToken(token)) {
 
-                String path = ClassUtils.getDefaultClassLoader().getResource("").getPath();
+                // tomcat bin路径
+                String past = System.getProperty("user.dir");
+                // 截断路径
+                String sxc = past.substring(0, past.lastIndexOf("\\"));
 
-                File upload = new File(path, "static/images/upload/");
+                File upload = new File(sxc, "static/images/upload/");
                 if (!upload.exists()) {
                     tokenBeanInfoBean.setCode(400);
                     tokenBeanInfoBean.setMsg("Img get failure");
@@ -328,6 +343,60 @@ public class RequestController {
             tokenBeanInfoBean.setMsg("file failure");
 
             log.error("User: Img to client - faile");
+        }
+
+        return new Gson().toJson(tokenBeanInfoBean);
+    }
+
+    /**
+     * 编辑个人信息
+     * @param token token
+     * @param info 个人信息
+     * @return
+     */
+    @SuppressWarnings("all")
+    @Transactional // 执行数据库更新事务
+    @PostMapping("/editInfo")
+    public String editInfo(@RequestHeader(name = "token") String token, @RequestParam(value = "info") String info) {
+        TokenUtil.userTableRepository = userTableRepository;
+
+        InfoBean<UserTable> tokenBeanInfoBean = new InfoBean<>();
+
+        try {
+            if (TokenUtil.haveToken(token)) {
+
+                UserTable userTable = new Gson().fromJson(info, UserTable.class);
+
+                UserTable userTableInfo = TokenUtil.getUser(token);
+
+                userTableRepository.updateInfoById(userTableInfo.getId(), userTable.getNickname(), userTable.getContent());
+
+                tokenBeanInfoBean.setCode(200);
+                tokenBeanInfoBean.setMsg("Info edit success");
+
+                UserTable userTable1 = userTableRepository.findByIdLike(userTableInfo.getId()).get(0);
+
+                for (int i = 0; i < WssHandler.userChatBeanList.size(); i++) {
+                    if(WssHandler.userChatBeanList.get(i).userTable.getId() == userTable.getId()) {
+                        WssHandler.userChatBeanList.get(i).userTable = userTable1;
+                        break;
+                    }
+                }
+
+                tokenBeanInfoBean.setData(userTable1);
+
+            } else {
+                tokenBeanInfoBean.setCode(400);
+                tokenBeanInfoBean.setMsg("Info edit failure");
+
+                log.error("User: Info edit to service - faile");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            tokenBeanInfoBean.setCode(400);
+            tokenBeanInfoBean.setMsg("Info edit failure");
+
+            log.error("User: Info edit client - faile");
         }
 
         return new Gson().toJson(tokenBeanInfoBean);

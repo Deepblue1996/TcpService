@@ -8,5 +8,7 @@ public class ChatMsgBean<T> implements Serializable {
     public UserTable userTableMine;
     public UserTable userTableHere;
     public int type;
+    public long time;
+    public boolean isRead;
     public T data;
 }
