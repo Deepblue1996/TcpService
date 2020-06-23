@@ -7,13 +7,10 @@ import com.deep.tcpservice.bean.UserTableRepository;
 import com.deep.tcpservice.util.FileToBase64Util;
 import com.deep.tcpservice.util.TokenUtil;
 import com.deep.tcpservice.websocket.WssHandler;
-import com.deep.tcpservice.websocket.bean.UserChatBean;
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -181,8 +178,11 @@ public class RequestController {
     @PostMapping("/userList")
     public String userList(@RequestHeader(name = "token") String token) {
 
-        InfoBean<List<UserChatBean>> tokenBeanInfoBean = new InfoBean<>();
-        List<UserChatBean> userChatBeanList = new ArrayList<>(WssHandler.userChatBeanList);
+        InfoBean<List<UserTable>> tokenBeanInfoBean = new InfoBean<>();
+        List<UserTable> userChatBeanList = new ArrayList<>();
+        for (int i = 0; i < WssHandler.userChatBeanList.size(); i++) {
+            userChatBeanList.add(WssHandler.userChatBeanList.get(i).getUserTable());
+        }
         tokenBeanInfoBean.setData(userChatBeanList);
         try {
             if (TokenUtil.haveToken(token)) {
@@ -265,8 +265,8 @@ public class RequestController {
                 userTableRepository.updateHeaderById(userTable.getId(), fileName);
 
                 for (int i = 0; i < WssHandler.userChatBeanList.size(); i++) {
-                    if(WssHandler.userChatBeanList.get(i).userTable.getId() == userTable.getId()) {
-                        WssHandler.userChatBeanList.get(i).userTable.setHeaderPath(userTable.getHeaderPath());
+                    if (WssHandler.userChatBeanList.get(i).getUserTable().getId() == userTable.getId()) {
+                        WssHandler.userChatBeanList.get(i).getUserTable().setHeaderPath(userTable.getHeaderPath());
                         break;
                     }
                 }
@@ -290,8 +290,9 @@ public class RequestController {
 
     /**
      * 获取图片
+     *
      * @param token token
-     * @param name 图片名称
+     * @param name  图片名称
      * @return
      */
     @SuppressWarnings("all")
@@ -350,8 +351,9 @@ public class RequestController {
 
     /**
      * 编辑个人信息
+     *
      * @param token token
-     * @param info 个人信息
+     * @param info  个人信息
      * @return
      */
     @SuppressWarnings("all")
@@ -377,8 +379,8 @@ public class RequestController {
                 UserTable userTable1 = userTableRepository.findByIdLike(userTableInfo.getId()).get(0);
 
                 for (int i = 0; i < WssHandler.userChatBeanList.size(); i++) {
-                    if(WssHandler.userChatBeanList.get(i).userTable.getId() == userTable.getId()) {
-                        WssHandler.userChatBeanList.get(i).userTable = userTable1;
+                    if (WssHandler.userChatBeanList.get(i).getUserTable().getId() == userTable.getId()) {
+                        WssHandler.userChatBeanList.get(i).setUserTable(userTable1);
                         break;
                     }
                 }
@@ -400,5 +402,46 @@ public class RequestController {
         }
 
         return new Gson().toJson(tokenBeanInfoBean);
+    }
+
+    @PostMapping("/findUser")
+    public String findUser(@RequestHeader(name = "token") String token, @RequestParam(value = "username") String username) {
+        TokenUtil.userTableRepository = userTableRepository;
+        InfoBean<List<UserTable>> tokenBeanInfoBean = new InfoBean<>();
+
+        try {
+            if (TokenUtil.haveToken(token)) {
+
+                List<UserTable> userTables = userTableRepository.findByUsernameLike(username);
+
+                if (userTables.size() > 0) {
+
+                    tokenBeanInfoBean.setCode(200);
+                    tokenBeanInfoBean.setMsg("User find success");
+
+                    tokenBeanInfoBean.setData(userTables);
+                } else {
+                    tokenBeanInfoBean.setCode(300);
+                    tokenBeanInfoBean.setMsg("User not find");
+
+                    log.error("User: User not to find - fail");
+                }
+
+            } else {
+                tokenBeanInfoBean.setCode(400);
+                tokenBeanInfoBean.setMsg("User find failure");
+
+                log.error("User: User find - fail");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            tokenBeanInfoBean.setCode(400);
+            tokenBeanInfoBean.setMsg("User find failure");
+
+            log.error("User: User find - fail");
+        }
+
+        return new Gson().toJson(tokenBeanInfoBean);
+
     }
 }

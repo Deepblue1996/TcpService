@@ -5,8 +5,8 @@ import com.deep.tcpservice.config.CacheGroup;
 import com.deep.tcpservice.util.TokenUtil;
 import com.deep.tcpservice.websocket.bean.BaseEn;
 import com.deep.tcpservice.websocket.bean.ChatMsgBean;
-import com.deep.tcpservice.websocket.bean.TokenChatUBean;
-import com.deep.tcpservice.websocket.bean.UserChatBean;
+import com.deep.tcpservice.websocket.bean.TokenChatBean;
+import com.deep.tcpservice.websocket.bean.UserTableChatBean;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
@@ -32,15 +32,14 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
     private Logger logger = LoggerFactory.getLogger(WssHandler.class);
 
     // 当前在线用户的信息
-    public static List<UserChatBean> userChatBeanList = new ArrayList<>();
-
+    public static List<UserTableChatBean> userChatBeanList = new ArrayList<>();
 
     private WebSocketServerHandshaker handShaker;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Add client");
-        userChatBeanList.add(new UserChatBean(false, ctx.channel().id().asLongText(), null));
+        userChatBeanList.add(new UserTableChatBean(null, ctx.channel().id().asLongText(), false));
         CacheGroup.wsShannels.add(ctx.channel());
     }
 
@@ -54,7 +53,7 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         logger.info("Remove client");
         for (int i = 0; i < userChatBeanList.size(); i++) {
-            if (userChatBeanList.get(i).asLongText.equals(ctx.channel().id().asLongText())) {
+            if (userChatBeanList.get(i).getAsLongText().equals(ctx.channel().id().asLongText())) {
                 userChatBeanList.remove(i);
                 break;
             }
@@ -130,12 +129,12 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     logger.error("json error");
                     break;
                 case 10000:
-                    // 连接成功，返回会话id给客户端
-                    Type type = new TypeToken<BaseEn<TokenChatUBean>>() {
+                    // 连接成功，返回给客户端
+                    Type type = new TypeToken<BaseEn<TokenChatBean>>() {
                     }.getType();
-                    BaseEn<TokenChatUBean> baseEnChild = new Gson().fromJson(strMsg, type);
+                    BaseEn<TokenChatBean> baseEnChild = new Gson().fromJson(strMsg, type);
 
-                    baseEnChild.data.tokenChatBean.asLongText = ctx.channel().id().asLongText();
+                    baseEnChild.data.asLongText = ctx.channel().id().asLongText();
                     baseEnChild.code = 10000;
                     baseEnChild.msg = "connected to service";
 
@@ -148,8 +147,8 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                     ctx.channel().writeAndFlush(new TextWebSocketFrame(msg));
 
                     for (int i = 0; i < userChatBeanList.size(); i++) {
-                        if (userChatBeanList.get(i).asLongText.equals(ctx.channel().id().asLongText())) {
-                            userChatBeanList.get(i).isConnectFirst = true;
+                        if (userChatBeanList.get(i).getAsLongText().equals(ctx.channel().id().asLongText())) {
+                            userChatBeanList.get(i).setConnectFirst(true);
                         }
                     }
                     break;
@@ -158,21 +157,21 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                      * 获取客户端的Token
                      */
                     for (int i = 0; i < userChatBeanList.size(); i++) {
-                        if (userChatBeanList.get(i).asLongText.equals(ctx.channel().id().asLongText()) && userChatBeanList.get(i).isConnectFirst) {
+                        if (userChatBeanList.get(i).getAsLongText().equals(ctx.channel().id().asLongText()) && userChatBeanList.get(i).isConnectFirst()) {
 
-                            Type type2 = new TypeToken<BaseEn<TokenChatUBean>>() {
+                            Type type2 = new TypeToken<BaseEn<TokenChatBean>>() {
                             }.getType();
-                            BaseEn<TokenChatUBean> baseEnChild2 = new Gson().fromJson(strMsg, type2);
+                            BaseEn<TokenChatBean> baseEnChild2 = new Gson().fromJson(strMsg, type2);
 
-                            if (!TokenUtil.haveToken(baseEnChild2.data.tokenChatBean.token)) {
+                            if (!TokenUtil.haveToken(baseEnChild2.data.token)) {
                                 logger.info("token over");
                                 logger.info("connect client error");
                                 ctx.close();
                             } else {
                                 logger.info("connect client success again");
-                                userChatBeanList.get(i).isConnectFirst = false;
+                                userChatBeanList.get(i).setConnectFirst(false);
                                 // 临时记录在线用户的信息
-                                userChatBeanList.get(i).userTable = TokenUtil.getUser(baseEnChild2.data.tokenChatBean.token);
+                                userChatBeanList.get(i).setUserTable(TokenUtil.getUser(baseEnChild2.data.token));
                             }
                         }
                     }
@@ -190,9 +189,9 @@ public class WssHandler extends SimpleChannelInboundHandler<Object> {
                         }.getType();
                         BaseEn<ChatMsgBean<String>> baseEnChildTemp = new Gson().fromJson(strMsg, typeTemp);
                         for (int i = 0; i < userChatBeanList.size(); i++) {
-                            if (userChatBeanList.get(i).userTable.getId() == baseEnChildTemp.data.userTableHere.getId()) {
+                            if (userChatBeanList.get(i).getUserTable().getId() == baseEnChildTemp.data.userTableHere.getId()) {
                                 for (int j = 0; j < CacheGroup.wsShannels.size(); j++) {
-                                    if (CacheGroup.wsShannels.get(j).id().asLongText().equals(userChatBeanList.get(i).asLongText)) {
+                                    if (CacheGroup.wsShannels.get(j).id().asLongText().equals(userChatBeanList.get(i).getAsLongText())) {
                                         String sendMsg = new Gson().toJson(baseEnChildTemp);
                                         logger.info("service send:" + sendMsg);
                                         CacheGroup.wsShannels.get(j).writeAndFlush(new TextWebSocketFrame(sendMsg));
